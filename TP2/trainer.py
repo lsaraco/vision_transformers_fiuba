@@ -119,8 +119,37 @@ class Trainer():
 	# def device(self):
 	# 	del self.device
 
-	def train_model(self,use_amp = False, dtype : torch.dtype = torch.bfloat16):
+	def train_model(self,use_amp = False, dtype : torch.dtype = torch.float16):
 
+		model = self.model.train()
+		scaler = torch.amp.GradScaler(enabled=use_amp)
+		losses = []
+		bar = tqdm(self.train_data_loader)
+		for train_input, train_mask in bar:
+	
+				train_mask = train_mask.to(self.device)
+				train_input = train_input.to(self.device)
+				with torch.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
+					output = model(train_input)
+					loss = self.loss_fn(output, train_mask)
+
+				if isinstance(dtype, type(torch.float16)):
+					scaler.scale(loss).backward()
+					scaler.step(self.optimizer)
+					scaler.update()
+				else:
+					loss.backward()
+					self.optimizer.step()
+				losses.append(loss.item())
+				
+				for param in model.parameters():
+					param.grad = None
+				bar.set_description(f"loss {loss:.5f}")
+		return np.mean(losses)
+	
+
+	def train_model_classic(self,use_amp = False, dtype : torch.dtype = torch.float16):
+		"""Función para training de manera clásica."""
 		model = self.model.train()
 		#scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
 		losses = []
@@ -129,16 +158,22 @@ class Trainer():
 	
 				train_mask = train_mask.to(self.device)
 				train_input=train_input.to(self.device)
-				with torch.autocast(device_type='cuda', dtype=dtype, enabled=use_amp):
-					output = model(train_input)
-					loss = self.loss_fn(output, train_mask)
+				
+				# Clear gradient
+				self.optimizer.zero_grad()
+
+				output = model(train_input)
+				loss = self.loss_fn(output, train_mask)
 				# if isinstance(dtype, type(torch.float16)):
 				# 	scaler.scale(loss).backward()
 				# 	scaler.step(self.optimizer)
 				# 	scaler.update()
 				# else:
-					
+				
+				# Backpropagation
 				loss.backward()
+
+				# Optimizer step
 				self.optimizer.step()
 
 				# outputs=model(train_input.float())
@@ -146,7 +181,6 @@ class Trainer():
 				losses.append(loss.item())
 				#loss.backward()
 				#optimizer.step()
-				#optimizer.zero_grad()
 				for param in model.parameters():
 					param.grad = None
 				bar.set_description(f"loss {loss:.5f}")
