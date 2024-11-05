@@ -141,14 +141,14 @@ class Trainer():
 					loss.backward()
 					self.optimizer.step()
 				losses.append(loss.item())
-				
+
 				for param in model.parameters():
 					param.grad = None
 				bar.set_description(f"loss {loss:.5f}")
 		return np.mean(losses)
 	
 
-	def train_model_classic(self,use_amp = False, dtype : torch.dtype = torch.float16):
+	def train_model_classic(self, dtype : torch.dtype = torch.float16):
 		"""Función para training de manera clásica."""
 		model = self.model.train()
 		#scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
@@ -156,8 +156,8 @@ class Trainer():
 		bar = tqdm(self.train_data_loader)
 		for train_input, train_mask in bar:
 	
+				train_input = train_input.to(self.device)
 				train_mask = train_mask.to(self.device)
-				train_input=train_input.to(self.device)
 				
 				# Clear gradient
 				self.optimizer.zero_grad()
