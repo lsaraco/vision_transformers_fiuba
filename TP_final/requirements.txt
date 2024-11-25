@@ -1,0 +1,13 @@
+torch
+torchvision
+torchviz
+torchsummary
+tensorboard
+pandas
+seaborn
+numpy
+pickle
+h5py
+transformers
+scikit-learn
+scipy
