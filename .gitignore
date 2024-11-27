@@ -1,4 +1,9 @@
 .venv
 TP1/__pycache__
 TP2/__pycache__
+TP3/__pycache__
+TP3/results
+TP_final/__pycache__
+TP_final/alternativa/logs
+TP_final/alternativa/results
 data/
